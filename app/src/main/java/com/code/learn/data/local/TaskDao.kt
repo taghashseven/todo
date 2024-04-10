@@ -1,4 +1,4 @@
-package com.code.learn.data
+package com.code.learn.data.local
 
 import androidx.room.Dao
 import androidx.room.Delete

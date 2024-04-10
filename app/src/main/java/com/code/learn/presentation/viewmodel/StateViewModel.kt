@@ -6,28 +6,34 @@ import androidx.lifecycle.viewModelScope
 import com.code.learn.MyApp
 import com.code.learn.data.TaskDatabase
 import com.code.learn.domain.model.Task
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class StateViewModel: ViewModel() {
-    val database = TaskDatabase.getDatabase(MyApp.getContext())
-    val taskDao = database.taskDao()
-    val _taskList = mutableStateListOf<Task>()
+    private val database = TaskDatabase.getDatabase(MyApp.getContext())
+    private val taskDao = database.taskDao()
+    private val _taskList = MutableStateFlow<List<Task>>(emptyList())
+    val taskList = _taskList.asStateFlow()
 
+        fun add(title : String){
+            val task = Task(null ,  title , "notes")
+            add(task)
+        }
 
-    fun toggleTaskCompletion(taskId: Int) {
-        val taskIndex = _taskList.indexOfFirst { it.id == taskId }
-        _taskList[taskIndex] = _taskList[taskIndex].copy(isCompleted = !_taskList[taskIndex].isCompleted)
+    // delete
+    fun delete(task : Task){
+        viewModelScope.launch {
+            taskDao.delete(task)
+            _taskList.value= taskDao.getAll()
+        }
     }
 
-    fun add(title: String){
-        var id = 1
-        if(_taskList.isNotEmpty()){
-            id = _taskList.last().id +1
-        }
-        val task = Task(id, title, "description", false)
-        _taskList.add(task)
+    fun add(task: Task){
         viewModelScope.launch {
             taskDao.upsert(task)
+            _taskList.value = taskDao.getAll()
         }
     }
+
 }
